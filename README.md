@@ -124,12 +124,12 @@ If you use this code, please cite the following paper:
 @ARTICLE{10884798,
   author={Guo, Fangming and Yu, Fangwen and Li, Mingyan and Chen, Chao and Yan, Jinjin and Li, Yan and Gu, Fuqiang and Long, Xianlei and Guo, Songtao},
   journal={IEEE Transactions on Instrumentation and Measurement}, 
-  title={Event-driven Tactile Sensing With Dense Spiking Graph Neural Networks}, 
+  title={Event-Driven Tactile Sensing With Dense Spiking Graph Neural Networks}, 
   year={2025},
-  volume={},
+  volume={74},
   number={},
-  pages={1-1},
-  keywords={Sensors;Robot sensing systems;Event detection;Tactile sensors;Graph neural networks;Neurons;Manuals;Training;Spiking neural networks;Object recognition;Event-based Learning;Tactile Sensing;Object Recognition;Spiking Neural Networks;Graph Neural Networks},
+  pages={1-13},
+  keywords={Sensors;Robot sensing systems;Event detection;Tactile sensors;Graph neural networks;Neurons;Manuals;Training;Spiking neural networks;Object recognition;Event-based learning;graph neural networks (GNNs);object recognition;spiking neural networks (SNNs);tactile sensing},
   doi={10.1109/TIM.2025.3541787}}
 ```
 
