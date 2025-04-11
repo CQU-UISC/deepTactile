@@ -87,9 +87,10 @@ def main(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    # Load dataset
+    # Load datasets
     train_dataset = TactileDataset(args.dataset, train=True)
     test_dataset = TactileDataset(args.dataset, train=False)
+    
     train_loader = DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
@@ -100,33 +101,87 @@ def main(args):
         data_path=args.dataset, k=0, useKNN=False, device=device
     ).to(device)
 
-    # Initialize criterion and optimizer
-    criterion = nn.MSELoss()
+    # Initialize loss function and optimizer
+    criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
-    if args.evaluate:
-        # Load pre-trained model
-        model.load_state_dict(torch.load(args.model_path, map_location=device))
-        evaluate(model, test_loader, device)
-    else:
-        # Train the model
-        train(model, train_loader, criterion, optimizer, device, args.epochs)
+    # Variables to track best performance
+    best_test_acc = 0.0
+    best_test_metrics = None
+    best_epoch = 0
+    best_model_state = None
 
-        # Save the model
-        os.makedirs(args.save_dir, exist_ok=True)
-        save_path = os.path.join(args.save_dir, "model.pth")
-        torch.save(model.state_dict(), save_path)
-        print(f"Model saved to {save_path}")
+    # Create directory for saving models
+    os.makedirs(args.save_dir, exist_ok=True)
+    
+    print("Starting training and evaluation...")
+    print("-" * 60)
+
+    for epoch in range(0, args.epochs, 1):  # Train one epoch at a time
+        # Training phase using the external train function
+        train(model, train_loader, criterion, optimizer, device, num_epochs=1)
+        
+        # Testing phase
+        model.eval()
+        y_true, y_pred = [], []
+        
+        with torch.no_grad():
+            for test_data, test_label in test_loader:
+                test_data, test_label = test_data.to(device), test_label.to(device)
+                outputs = model(test_data)
+                _, predicted = outputs.max(1)
+                y_true.extend(test_label.cpu().tolist())
+                y_pred.extend(predicted.cpu().tolist())
+
+        # Calculate test metrics
+        test_acc = accuracy_score(y_true, y_pred) * 100
+        test_precision = precision_score(y_true, y_pred, average='weighted') * 100
+        test_recall = recall_score(y_true, y_pred, average='weighted') * 100
+        test_f1 = f1_score(y_true, y_pred, average='weighted') * 100
+
+        # Print current epoch results
+        print(f"Testing  - Accuracy: {test_acc:.2f}%, Precision: {test_precision:.2f}%, "
+              f"Recall: {test_recall:.2f}%, F1: {test_f1:.2f}%")
+
+        # Update best results if current test accuracy is better
+        if test_acc > best_test_acc:
+            best_test_acc = test_acc
+            best_test_metrics = {
+                'accuracy': test_acc,
+                'precision': test_precision,
+                'recall': test_recall,
+                'f1': test_f1
+            }
+            best_epoch = epoch + 1
+            best_model_state = model.state_dict().copy()
+
+            # Save the best model
+            torch.save({
+                'epoch': best_epoch,
+                'model_state_dict': best_model_state,
+                'test_metrics': best_test_metrics,
+                'optimizer_state_dict': optimizer.state_dict(),
+            }, os.path.join(args.save_dir, "best_model.pth"))
+            print(f"New best model saved! Test accuracy: {test_acc:.2f}%")
+
+    # Print final results
+    print("\n" + "=" * 60)
+    print("Training completed!")
+    print(f"Best results (Epoch {best_epoch}):")
+    print(f"Test Accuracy: {best_test_metrics['accuracy']:.2f}%")
+    print(f"Test Precision: {best_test_metrics['precision']:.2f}%")
+    print(f"Test Recall: {best_test_metrics['recall']:.2f}%")
+    print(f"Test F1-score: {best_test_metrics['f1']:.2f}%")
+    print("=" * 60)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train or evaluate DeepTactile")
+    parser = argparse.ArgumentParser(description="Train and evaluate DeepTactile")
     parser.add_argument("--dataset", type=str, required=True, help="Path to the dataset")
-    parser.add_argument("--batch-size", type=int, default=16, help="Batch size for training/testing")
+    parser.add_argument("--batch-size", type=int, default=1, help="Batch size for training/testing")
     parser.add_argument("--epochs", type=int, default=100, help="Number of epochs for training")
-    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
-    parser.add_argument("--evaluate", action="store_true", help="Evaluate a pre-trained model")
-    parser.add_argument("--model-path", type=str, help="Path to the pre-trained model")
+    parser.add_argument("--lr", type=float, default=0.001, help="Learning rate")
     parser.add_argument("--save-dir", type=str, default="./models", help="Directory to save the trained model")
     args = parser.parse_args()
 
     main(args)
+
