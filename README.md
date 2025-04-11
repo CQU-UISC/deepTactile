@@ -71,21 +71,14 @@ Ensure you have the following installed:
 
 ## Usage
 
-### Training the Model
+### Training and evaluating the Model
 
-To train the model on the ST-MNIST tactile dataset:
-
-```bash
-python main.py --dataset ST-MNIST-SPLIT --epochs 100 --batch-size 16
-```
-
-### Evaluating the Model
-
-To evaluate a pre-trained model:
+To train and evaluate the model on the ST-MNIST tactile dataset:
 
 ```bash
-python main.py --dataset ST-MNIST-SPLIT --evaluate --model-path ./path-to-model.pth
+python main.py --dataset ST-MNIST-SPLIT --batch-size 32 --epochs 100 --lr 0.001 --save-dir ./models
 ```
+
 
 ### Dataset Preparation
 
